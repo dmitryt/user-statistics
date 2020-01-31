@@ -1,1 +1,2 @@
 # user-statistics
+Application tracks the user activity. When user has visited the page more, than N amount of time, it sends an email to administrator via message queue(it launches Lambda function(lambda.js file) under the hood).
