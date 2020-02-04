@@ -5,7 +5,10 @@ apt-get update
 apt-get install -y gnupg apache2 wget unzip postgresql postgresql-contrib curl
 
 # Init Section
-sqs_queue_url=""
+queue_host=""
+queue_name=""
+queue_user=""
+queue_pass=""
 db_host=""
 db_port="5432"
 db_name=""
@@ -51,10 +54,13 @@ sed -i "s/DB_PORT/$db_port/g" index.js
 sed -i "s/DB_NAME/$db_name/g" index.js
 sed -i "s/DB_USER/$db_user/g" index.js
 sed -i "s/DB_PASS/$db_pass/g" index.js
-sed -i "s/SQS_QUEUE_URL/$sqs_queue_url/g" index.js
+sed -i "s/QUEUE_HOST/$queue_host/g" index.js
+sed -i "s/QUEUE_NAME/$queue_name/g" index.js
+sed -i "s/QUEUE_USER/$queue_user/g" index.js
+sed -i "s/QUEUE_PASS/$queue_pass/g" index.js
 chmod 755 index.js
 
-npm i pg express aws-sdk gcp-metadata
+npm i pg express amqplib gcp-metadata
 
 npm install -g pm2
 pm2 start index.js
