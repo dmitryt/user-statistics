@@ -1,7 +1,7 @@
 const Pool = require('pg').Pool;
 const express = require('express');
 const http = require('http');
-const aws = require('aws-sdk');
+const amqplib = require('amqplib/callback_api');
 const gcpMetadata = require('gcp-metadata');
 const port = 8000;
 
@@ -9,12 +9,6 @@ let instanceId;
 gcpMetadata.instance('id').then(id => {
 	instanceId = id.toString();
 });
-
-// Set the region
-aws.config.update({region: 'us-east-2'});
-
-// Create an SQS service object
-const sqs = new aws.SQS({ apiVersion: '2012-11-05' });
 
 const pool = new Pool({
   user: 'DB_USER',
@@ -28,16 +22,38 @@ const maxQueriesPerDay = 10;
 
 const app = express();
 
+const connectParams = {
+  protocol: 'amqp',
+  hostname: 'QUEUE_HOST',
+  port: 5672,
+  username: 'QUEUE_HOST',
+  password: 'QUEUE_PASS',
+  locale: 'en_US',
+  frameMax: 0,
+  heartbeat: 0,
+  vhost: '/',
+}
+
 const sendToQueue = (clientIp) => {
-  var sqsParams = {
-    MessageBody: JSON.stringify({ clientIp }),
-    QueueUrl: 'SQS_QUEUE_URL'
-  };
-  sqs.sendMessage(sqsParams, function(err, data) {
-    if (err) {
-      console.log('ERR', err);
+  amqplib.connect(connectParams, function(error0, connection) {
+    if (error0) {
+      throw error0;
     }
-    console.log(data);
+    connection.createChannel(function(error1, channel) {
+      if (error1) {
+        throw error1;
+      }
+      const queue = 'QUEUE_NAME';
+
+      channel.assertQueue(queue, {
+        durable: false
+      });
+
+      channel.sendToQueue(queue, Buffer.from(JSON.stringify({ clientIp })));
+      console.log(" [x] Sent %s", msg);
+
+      connection.close();
+    });
   });
 };
 
