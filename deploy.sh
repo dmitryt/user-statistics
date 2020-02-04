@@ -9,6 +9,8 @@ queue_host=""
 queue_name=""
 queue_user=""
 queue_pass=""
+gcp_subscription_name="projects/midyear-glazing-262517/subscriptions/hw26-pubsub"
+gcp_queue_name="hw26-queue"
 db_host=""
 db_port="5432"
 db_name=""
@@ -55,12 +57,14 @@ sed -i "s/DB_NAME/$db_name/g" index.js
 sed -i "s/DB_USER/$db_user/g" index.js
 sed -i "s/DB_PASS/$db_pass/g" index.js
 sed -i "s/QUEUE_HOST/$queue_host/g" index.js
+sed -i "s/QUEUE_HOST/$queue_host/g" index.js
 sed -i "s/QUEUE_NAME/$queue_name/g" index.js
 sed -i "s/QUEUE_USER/$queue_user/g" index.js
-sed -i "s/QUEUE_PASS/$queue_pass/g" index.js
+sed -i "s/GCP_SUBSCRIPTION_NAME/$gcp_subscription_name/g" index.js
+sed -i "s/GCP_QUEUE_NAME/$gcp_queue_name/g" index.js
 chmod 755 index.js
 
-npm i pg express amqplib gcp-metadata
+npm i pg express amqplib gcp-metadata @google-cloud/pubsub
 
 npm install -g pm2
 pm2 start index.js

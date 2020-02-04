@@ -3,6 +3,7 @@ const express = require('express');
 const http = require('http');
 const amqplib = require('amqplib/callback_api');
 const gcpMetadata = require('gcp-metadata');
+const { PubSub } = require('@google-cloud/pubsub');
 const port = 8000;
 
 let instanceId;
@@ -34,27 +35,44 @@ const connectParams = {
   vhost: '/',
 }
 
+const gcpSubscriptionName = 'GCP_SUBSCRIPTION_NAME';
+const gcpQueueName = 'GCP_QUEUE_NAME';
+const gcpPubSubClient = new PubSub();
+
 const sendToQueue = (clientIp) => {
-  amqplib.connect(connectParams, function(error0, connection) {
-    if (error0) {
-      throw error0;
-    }
-    connection.createChannel(function(error1, channel) {
-      if (error1) {
-        throw error1;
+  const objStr = JSON.stringify({ clientIp });
+  const obj = Buffer.from(objStr);
+  if (connectParams.hostname) {
+    amqplib.connect(connectParams, function(error0, connection) {
+      if (error0) {
+        throw error0;
       }
-      const queue = 'QUEUE_NAME';
+      connection.createChannel(function(error1, channel) {
+        if (error1) {
+          throw error1;
+        }
+        const queue = 'QUEUE_NAME';
 
-      channel.assertQueue(queue, {
-        durable: false
+        channel.assertQueue(queue, {
+          durable: false
+        });
+
+        channel.sendToQueue(queue, obj);
+        console.log(" [x] Sent %s", objStr);
+
+        connection.close();
       });
-
-      channel.sendToQueue(queue, Buffer.from(JSON.stringify({ clientIp })));
-      console.log(" [x] Sent %s", msg);
-
-      connection.close();
     });
-  });
+  }
+  if (gcpSubscriptionName && gcpQueueName) {
+    pubSubClient.topic(gcpQueueName).publish(obj)
+      .then(messageId => {
+        console.log(`Message ${messageId} published.`);
+      })
+      .catch((e) => {
+        console.error('Error during publishing the message', e);
+      });
+  }
 };
 
 // the pool will emit an error on behalf of any idle clients
